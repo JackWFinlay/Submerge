@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Submerge", "Submerge\Submerge.csproj", "{720684DD-A3DD-4367-8349-8C2288C5CCC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Submerge.Abstractions", "Submerge.Abstractions\Submerge.Abstractions.csproj", "{75AEEF72-5A5D-4DDB-ADC0-59DAF18CE97C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Submerge.Benchmarks", "Submerge.Benchmarks\Submerge.Benchmarks.csproj", "{FBDD1070-30F6-4D41-8135-6C75F0143BBD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Submerge.Test", "Submerge.Test\Submerge.Test.csproj", "{3FFA03B1-D83A-43BD-942D-5F015D6B11E4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{720684DD-A3DD-4367-8349-8C2288C5CCC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{720684DD-A3DD-4367-8349-8C2288C5CCC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{720684DD-A3DD-4367-8349-8C2288C5CCC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{720684DD-A3DD-4367-8349-8C2288C5CCC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75AEEF72-5A5D-4DDB-ADC0-59DAF18CE97C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75AEEF72-5A5D-4DDB-ADC0-59DAF18CE97C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75AEEF72-5A5D-4DDB-ADC0-59DAF18CE97C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75AEEF72-5A5D-4DDB-ADC0-59DAF18CE97C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBDD1070-30F6-4D41-8135-6C75F0143BBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBDD1070-30F6-4D41-8135-6C75F0143BBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBDD1070-30F6-4D41-8135-6C75F0143BBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBDD1070-30F6-4D41-8135-6C75F0143BBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FFA03B1-D83A-43BD-942D-5F015D6B11E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FFA03B1-D83A-43BD-942D-5F015D6B11E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FFA03B1-D83A-43BD-942D-5F015D6B11E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FFA03B1-D83A-43BD-942D-5F015D6B11E4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.1;net5</TargetFrameworks>
+        <LangVersion>9</LangVersion>
+    </PropertyGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+        <PackageReference Include="System.Memory" Version="4.5.4" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Submerge.Abstractions\Submerge.Abstractions.csproj" />
+    </ItemGroup>
+</Project>
