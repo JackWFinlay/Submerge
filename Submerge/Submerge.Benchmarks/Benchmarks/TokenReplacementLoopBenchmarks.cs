@@ -60,6 +60,19 @@ namespace Submerge.Benchmarks.Benchmarks
         }
 
         [Benchmark]
+        public void StringTokenFormatter_FormatContainer()
+        {
+            var pattern = SegmentedString.Parse(_testString);
+
+            for (var i = 0; i < _iterations; i++)
+            {
+                var propertiesContainer = TokenValueContainer.FromObject(_testClasses[i]);
+
+                var result = pattern.Format(propertiesContainer);
+            }
+        }
+
+        [Benchmark]
         public void SubmergeTokenReplacementEngineFromObject()
         {
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
