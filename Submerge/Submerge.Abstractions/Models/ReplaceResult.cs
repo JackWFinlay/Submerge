@@ -1,6 +1,6 @@
 using System;
 
-namespace Submerge.DataStructures
+namespace Submerge.Abstractions.Models
 {
     public struct ReplaceResult
     {

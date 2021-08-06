@@ -1,10 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 using Submerge.Abstractions.Interfaces;
-using Submerge.Configuration;
+using Submerge.Abstractions.Models;
 using Submerge.ReplacementEngines;
 
 namespace Submerge
@@ -17,60 +16,88 @@ namespace Submerge
         {
             _replacementEngine = new TokenReplacementEngine(config);
         }
-        
-        public async Task<string> ReplaceAsync(ReadOnlyMemory<char> input) => await EscapeAsync(input);
 
-        public async Task<string> ReplaceAsync(string input) => await EscapeAsync(input);
+        public string Replace(string input) => Replace(input.AsMemory());
 
-        public IEnumerable<string> ReplaceAsync(string input,
-            IEnumerable<IDictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>> substitutionMaps) =>
-                 ReplaceAsync(input.AsMemory(), substitutionMaps);
+        public IEnumerable<string> Replace(string input,
+            IEnumerable<ISubstitutionMap> substitutionMaps) =>
+                 Replace(input.AsMemory(), (IList<ISubstitutionMap>) substitutionMaps);
 
-        public IEnumerable<string> ReplaceAsync(ReadOnlyMemory<char> input,
-            IEnumerable<IDictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>> substitutionMaps)
+        public TokenMatchSet GetMatches(string input) => _replacementEngine.GetTokenMatchSet(input.AsMemory());
+
+        public string Replace(TokenMatchSet matches, ISubstitutionMap substitutionMap)
         {
-            var results = _replacementEngine.ReplaceWithMatchIndexList(input, substitutionMaps);
+            var replaceResult = _replacementEngine.Replace(matches, substitutionMap);
+
+            var result = CreateString(replaceResult);
+
+            return result;
+        }
+
+        private IEnumerable<string> Replace(ReadOnlyMemory<char> input,
+            IList<ISubstitutionMap> substitutionMaps)
+        {
+            var inputAsReplaceResult = new ReplaceResult();
+            var cachedUnreplacedString = string.Empty;
+            
+            var results = _replacementEngine.Replace(input, substitutionMaps);
 
             foreach (var result in results)
             {
-                var escapedMemory = result.Memory;
-                var length = result.Length;
+                var escapedString = string.Empty;
                 
                 if (result.Memory.IsEmpty)
                 {
-                    escapedMemory = new ReadOnlyMemory<ReadOnlyMemory<char>>(new[] { input });
-                    length = input.Length;
+                    if (inputAsReplaceResult.Memory.IsEmpty)
+                    {
+                        // Cache the empty result only when it actually needs to be generated.
+                        var memory = new ReadOnlyMemory<ReadOnlyMemory<char>>(new[] {input});
+
+                        inputAsReplaceResult = new ReplaceResult()
+                        {
+                            Memory = memory,
+                            Length = input.Length
+                        };
+                    }
+
+                    if (string.IsNullOrWhiteSpace(escapedString))
+                    {
+                        // Only create the string when we actually need it.
+                        cachedUnreplacedString = CreateString(inputAsReplaceResult);
+                    }
+
+                    escapedString = cachedUnreplacedString;
                 }
-
-                var escaped = CreateString(escapedMemory, length);
-
-                yield return escaped;
+                else
+                {
+                    escapedString = CreateString(result);
+                }
+                
+                yield return escapedString;
             }
         }
 
-        private async Task<string> EscapeAsync(string text)
+        private string Replace(ReadOnlyMemory<char> input)
         {
-            var escaped = await ReplaceAsync(text.AsMemory());
-            
-            return escaped;
-        }
-        
-        private async Task<string> EscapeAsync(ReadOnlyMemory<char> input)
-        {
-            var escapedMemory = await _replacementEngine.ReplaceAsync(input, out var length);
+            var replaceResult = _replacementEngine.Replace(input);
 
-            if (escapedMemory.IsEmpty)
+            if (replaceResult.Memory.IsEmpty)
             {
-                escapedMemory = new ReadOnlyMemory<ReadOnlyMemory<char>>(new[] { input });
-                length = input.Length;
+                var memory = new ReadOnlyMemory<ReadOnlyMemory<char>>(new[] { input });
+
+                replaceResult = new ReplaceResult()
+                {
+                    Memory = memory,
+                    Length = input.Length
+                };
             }
 
-            var escaped = CreateString(escapedMemory, length);
+            var escaped = CreateString(replaceResult);
 
             return escaped;
         }
 
-        private string CreateString(ReadOnlyMemory<ReadOnlyMemory<char>> input, int length)
+        private static string CreateString(ReplaceResult input)
         {
 #if NETSTANDARD2_0
             var stringBuilder = new StringBuilder();
@@ -85,10 +112,10 @@ namespace Submerge
             }
             var escaped = stringBuilder.ToString();
 #else
-                var escaped = string.Create(length, input,
+                var escaped = string.Create(input.Length, input.Memory,
                 (destination, state) =>
                 {
-                    int prevLength = 0;
+                    var prevLength = 0;
                     for (var i = 0; i < state.Length; i++)
                     {
                         state.Span[i].Span.CopyTo(destination.Slice(prevLength));

@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Submerge.Abstractions.Exceptions;
 using Submerge.Abstractions.Interfaces;
+using Submerge.Abstractions.Models;
+using Submerge.Configuration;
 using Submerge.DataStructures;
 using Submerge.Extensions;
 
@@ -17,27 +20,23 @@ namespace Submerge.ReplacementEngines
             _config = config;
         }
 
-        public Task<ReadOnlyMemory<ReadOnlyMemory<char>>> ReplaceAsync(ReadOnlyMemory<char> raw, out int length)
+        public ReplaceResult Replace(ReadOnlyMemory<char> raw)
         {
-            length = 0;
-            
             if (raw.IsEmpty)
             {
-                return Task.FromResult<ReadOnlyMemory<ReadOnlyMemory<char>>>(null);
+                return new ReplaceResult();
             }
             
             try
             {
-                var (memory, totalLength) = CreateEscapedTextList(raw);
+                var replaceResult = CreateEscapedTextList(raw);
                 
-                if (memory.IsEmpty)
+                if (replaceResult.Memory.IsEmpty)
                 {
-                    return Task.FromResult<ReadOnlyMemory<ReadOnlyMemory<char>>>(null);
+                    return new ReplaceResult();
                 }
 
-                length = totalLength;
-
-                return Task.FromResult(memory);
+                return replaceResult;
             }
             catch (Exception e)
             {
@@ -45,9 +44,14 @@ namespace Submerge.ReplacementEngines
             }
         }
 
-        public IEnumerable<ReplaceResult> ReplaceWithMatchIndexList(ReadOnlyMemory<char> raw, 
-            IEnumerable<IDictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>> substitutionMaps)
+        public IEnumerable<ReplaceResult> Replace(ReadOnlyMemory<char> raw,
+            IList<ISubstitutionMap> substitutionMaps)
         {
+            if (!substitutionMaps.Any())
+            {
+                yield break;
+            }
+
             var matchIndexList = GetMatches(raw);
 
             foreach (var substitutionMap in substitutionMaps)
@@ -58,7 +62,27 @@ namespace Submerge.ReplacementEngines
             }
         }
 
-        private (ReadOnlyMemory<ReadOnlyMemory<char>> memorySpan, int length) CreateEscapedTextList(ReadOnlyMemory<char> raw)
+        public ReplaceResult Replace(TokenMatchSet matchSet, ISubstitutionMap substitutionMap)
+        {
+            var result = ReplaceWithMatchIndexList(matchSet.Input, matchSet.TokenMatches, substitutionMap);
+
+            return result;
+        }
+
+        public TokenMatchSet GetTokenMatchSet(ReadOnlyMemory<char> input)
+        {
+            var matches = GetMatches(input);
+
+            var result = new TokenMatchSet()
+            {
+                Input = input,
+                TokenMatches = matches
+            };
+
+            return result;
+        }
+
+        private ReplaceResult CreateEscapedTextList(ReadOnlyMemory<char> raw)
         {
             var result = new ValueList<ReadOnlyMemory<char>>();
             var length = 0;
@@ -97,7 +121,7 @@ namespace Submerge.ReplacementEngines
                 if (startOfTokenEndIndex < 0)
                 {
                     // Malformed token. Return empty token.
-                    return (null, 0);
+                    return new ReplaceResult();
                 }
 
                 // We can just grab the slice of length startOfTokenEndIndex because of zero-based indexing.
@@ -140,8 +164,14 @@ namespace Submerge.ReplacementEngines
                 result.Add(endSlice);
                 length += endSlice.Length;
             }
+
+            var replaceResult = new ReplaceResult()
+            {
+                Memory = result.AsMemory(),
+                Length = length
+            };
             
-            return (result.AsMemory(), length);
+            return replaceResult;
         }
 
         private ReadOnlyMemory<TokenMatch> GetMatches(ReadOnlyMemory<char> memory)
@@ -205,7 +235,7 @@ namespace Submerge.ReplacementEngines
         
         private ReplaceResult ReplaceWithMatchIndexList(ReadOnlyMemory<char> raw,
             ReadOnlyMemory<TokenMatch> matches,
-            IDictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>> substitutionMap)
+            ISubstitutionMap substitutionMap)
         {
             var result = new ValueList<ReadOnlyMemory<char>>();
             var length = 0;

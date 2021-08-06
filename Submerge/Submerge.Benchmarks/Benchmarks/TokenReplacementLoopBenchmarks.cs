@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using StringTokenFormatter;
+using Submerge.Abstractions.Interfaces;
 using Submerge.Configuration;
 
 namespace Submerge.Benchmarks.Benchmarks
@@ -58,32 +60,30 @@ namespace Submerge.Benchmarks.Benchmarks
         }
 
         [Benchmark]
-        public async Task SubmergeTokenReplacementEngineFromObject()
+        public void SubmergeTokenReplacementEngineFromObject()
         {
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
                 .SetTokenEnd("}")
                 .Build();
             
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
-            var testMemory = _testString.AsMemory();
 
             for (var i = 0; i < _iterations; i++)
             {
                 config.UpdateOrAddFromObject(_testClasses[i]);
                 
-                await submergeTokenReplacer.ReplaceAsync(testMemory);
+                submergeTokenReplacer.Replace(_testString);
             }
         }
         
         [Benchmark]
-        public async Task SubmergeTokenReplacementEngineUpdateOrAddMapping()
+        public void SubmergeTokenReplacementEngineUpdateOrAddMapping()
         {
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
                 .SetTokenEnd("}")
                 .Build();
             
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
-            var testMemory = _testString.AsMemory();
             
             for (var i = 0; i < _iterations; i++)
             {
@@ -94,7 +94,7 @@ namespace Submerge.Benchmarks.Benchmarks
                 config.UpdateOrAddMapping("state", _testClasses[i].State);
                 config.UpdateOrAddMapping("country", _testClasses[i].Country);
 
-                await submergeTokenReplacer.ReplaceAsync(testMemory);
+                submergeTokenReplacer.Replace(_testString);
             }
         }
         
@@ -106,25 +106,45 @@ namespace Submerge.Benchmarks.Benchmarks
                 .Build();
             
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
-            var testMemory = _testString.AsMemory();
-            var subMaps = new List<IDictionary<ReadOnlyMemory<char>, ReadOnlyMemory<char>>>();
+            var subMaps = new List<ISubstitutionMap>();
             
             for (var i = 0; i < _iterations; i++)
             {
-                var subConfig = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
-                    .SetTokenEnd("}")
-                    .AddMapping("name", _testClasses[i].Name)
-                    .AddMapping("age", _testClasses[i].Age.ToString())
-                    .AddMapping("rank", _testClasses[i].Rank.ToString())
-                    .AddMapping("location", _testClasses[i].Location)
-                    .AddMapping("state", _testClasses[i].State)
-                    .AddMapping("country", _testClasses[i].Country);
-                
-                subMaps.Add(subConfig.SubstitutionMap);
-            }
+                var substitutionMap = new SubstitutionMap()
+                    .UpdateOrAddMapping("name", _testClasses[i].Name)
+                    .UpdateOrAddMapping("age", _testClasses[i].Age.ToString())
+                    .UpdateOrAddMapping("rank", _testClasses[i].Rank.ToString())
+                    .UpdateOrAddMapping("location", _testClasses[i].Location)
+                    .UpdateOrAddMapping("state", _testClasses[i].State)
+                    .UpdateOrAddMapping("country", _testClasses[i].Country);
 
-            foreach (var result in submergeTokenReplacer.ReplaceAsync(testMemory, subMaps))
+                subMaps.Add(substitutionMap);
+            } 
+            
+            var result = submergeTokenReplacer.Replace(_testString, subMaps).ToList();
+        }
+        
+        [Benchmark]
+        public void SubmergeTokenReplacementEngineReplaceWithGetMatches()
+        {
+            var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
+                .SetTokenEnd("}")
+                .Build();
+            
+            var submergeTokenReplacer = new SubmergeTokenReplacer(config);
+            var matches = submergeTokenReplacer.GetMatches(_testString);
+            
+            for (var i = 0; i < _iterations; i++)
             {
+                var substitutionMap = new SubstitutionMap()
+                    .UpdateOrAddMapping("name", _testClasses[i].Name)
+                    .UpdateOrAddMapping("age", _testClasses[i].Age.ToString())
+                    .UpdateOrAddMapping("rank", _testClasses[i].Rank.ToString())
+                    .UpdateOrAddMapping("location", _testClasses[i].Location)
+                    .UpdateOrAddMapping("state", _testClasses[i].State)
+                    .UpdateOrAddMapping("country", _testClasses[i].Country);
+
+                submergeTokenReplacer.Replace(matches, substitutionMap);
             }
         }
 

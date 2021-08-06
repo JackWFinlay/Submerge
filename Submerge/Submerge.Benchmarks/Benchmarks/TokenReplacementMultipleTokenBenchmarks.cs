@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using StringTokenFormatter;
@@ -11,17 +10,16 @@ namespace Submerge.Benchmarks.Benchmarks
     {
         private class TestClass
         {
-            public string Name { get; set; }
-            public string Location { get; set; }
-            public string State { get; set; }
-            public string Country { get; set; }
-            public int Age { get; set; }
-            public int Rank { get; set; }
+            public string Name { get; init; }
+            public string Location { get; init; }
+            public string State { get; init; }
+            public string Country { get; init; }
+            public int Age { get; init; }
+            public int Rank { get; init; }
             
         }
 
         private const string _testString = Constants.ExampleMergeTemplate;
-        private const int _iterations = 1;
         private const int _age = 99;
         private const int _rank = 1;
         private const string _name = "John";
@@ -45,7 +43,7 @@ namespace Submerge.Benchmarks.Benchmarks
         }
 
         [Benchmark]
-        public async Task EscapeRouteTokenReplacementEngine()
+        public void EscapeRouteTokenReplacementEngine()
         {
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
                 .SetTokenEnd("}")
@@ -58,7 +56,7 @@ namespace Submerge.Benchmarks.Benchmarks
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
-            await submergeTokenReplacer.ReplaceAsync(_testString.AsMemory());
+            submergeTokenReplacer.Replace(_testString);
         }
 
         [Benchmark]

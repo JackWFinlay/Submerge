@@ -3,7 +3,7 @@ using FluentAssertions;
 using Submerge.Configuration;
 using Xunit;
 
-namespace Submerge.Tests
+namespace Submerge.Test
 {
     public class TokenReplacementConfigurationBuilderTests
     {

@@ -1,5 +1,4 @@
-﻿using System;
-using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Running;
 using Submerge.Benchmarks.Benchmarks;
 
 namespace Submerge.Benchmarks

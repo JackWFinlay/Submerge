@@ -1,8 +1,8 @@
 using System;
 
-namespace Submerge.DataStructures
+namespace Submerge.Abstractions.Models
 {
-    internal struct TokenMatch
+    public struct TokenMatch
     {
         public ReadOnlyMemory<char> Token { get; init; }
         public int Index { get; init; }
