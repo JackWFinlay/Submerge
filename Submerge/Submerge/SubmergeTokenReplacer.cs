@@ -29,48 +29,36 @@ namespace Submerge
         {
             var replaceResult = _replacementEngine.Replace(matches, substitutionMap);
 
-            var result = CreateString(replaceResult);
-
-            return result;
+            return replaceResult;
         }
+
+        public string Replace(TokenMatchSet matches, TokenReplacementSet tokenReplacementSet) =>
+            _replacementEngine.Replace(matches, tokenReplacementSet);
 
         private IEnumerable<string> Replace(ReadOnlyMemory<char> input,
             IList<ISubstitutionMap> substitutionMaps)
         {
-            var inputAsReplaceResult = new ReplaceResult();
-            var cachedUnreplacedString = string.Empty;
+            var cachedRawString = string.Empty;
             
             var results = _replacementEngine.Replace(input, substitutionMaps);
 
             foreach (var result in results)
             {
-                var escapedString = string.Empty;
+                string escapedString;
                 
-                if (result.Memory.IsEmpty)
+                if (string.IsNullOrWhiteSpace(result))
                 {
-                    if (inputAsReplaceResult.Memory.IsEmpty)
-                    {
-                        // Cache the empty result only when it actually needs to be generated.
-                        var memory = new ReadOnlyMemory<ReadOnlyMemory<char>>(new[] {input});
-
-                        inputAsReplaceResult = new ReplaceResult()
-                        {
-                            Memory = memory,
-                            Length = input.Length
-                        };
-                    }
-
-                    if (string.IsNullOrWhiteSpace(escapedString))
+                    if (string.IsNullOrWhiteSpace(cachedRawString))
                     {
                         // Only create the string when we actually need it.
-                        cachedUnreplacedString = CreateString(inputAsReplaceResult);
+                        cachedRawString = input.ToString();
                     }
 
-                    escapedString = cachedUnreplacedString;
+                    escapedString = cachedRawString;
                 }
                 else
                 {
-                    escapedString = CreateString(result);
+                    escapedString = result;
                 }
                 
                 yield return escapedString;
@@ -80,49 +68,20 @@ namespace Submerge
         private string Replace(ReadOnlyMemory<char> input)
         {
             var replaceResult = _replacementEngine.Replace(input);
+            var cachedRawString = string.Empty;
 
-            if (replaceResult.Memory.IsEmpty)
+            if (string.IsNullOrEmpty(replaceResult))
             {
-                var memory = new ReadOnlyMemory<ReadOnlyMemory<char>>(new[] { input });
-
-                replaceResult = new ReplaceResult()
+                if (string.IsNullOrWhiteSpace(cachedRawString))
                 {
-                    Memory = memory,
-                    Length = input.Length
-                };
-            }
-
-            var escaped = CreateString(replaceResult);
-
-            return escaped;
-        }
-
-        private static string CreateString(ReplaceResult input)
-        {
-#if NETSTANDARD2_0
-            var stringBuilder = new StringBuilder();
-            var span = input.Span;
-            
-            for (var i = 0; i < input.Length; i++)
-            {
-                for (var j = 0; j < span[i].Length; i++)
-                {
-                    stringBuilder.Append(span[i].Span[j]);
+                    cachedRawString = input.ToString();
                 }
+
+                replaceResult = cachedRawString;
             }
-            var escaped = stringBuilder.ToString();
-#else
-                var escaped = string.Create(input.Length, input.Memory,
-                (destination, state) =>
-                {
-                    var prevLength = 0;
-                    for (var i = 0; i < state.Length; i++)
-                    {
-                        state.Span[i].Span.CopyTo(destination.Slice(prevLength));
-                        prevLength += state.Span[i].Length;
-                    }
-                });
-#endif
+
+            var escaped = replaceResult;
+
             return escaped;
         }
     }

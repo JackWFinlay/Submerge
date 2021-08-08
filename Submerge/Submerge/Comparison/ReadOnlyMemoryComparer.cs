@@ -7,6 +7,11 @@ namespace Submerge.Comparison
     {
         public bool Equals(ReadOnlyMemory<char> x, ReadOnlyMemory<char> y)
         {
+            if (x.Length != y.Length)
+            {
+                return false;
+            }
+
             for (var i = 0; i < x.Length; i++)
             {
                 if (x.Span[i] != y.Span[i])
@@ -20,14 +25,15 @@ namespace Submerge.Comparison
 
         public int GetHashCode(ReadOnlyMemory<char> obj)
         {
-            var hashCode = 0;
+            var hashCode = new HashCode();
+            var span = obj.Span;
             
             for (var i = 0; i < obj.Length; i++)
             {
-                hashCode ^= obj.Span[i].GetHashCode();
+                hashCode.Add(span[i]);
             }
 
-            return hashCode;
+            return hashCode.ToHashCode();
         }
     }
 }

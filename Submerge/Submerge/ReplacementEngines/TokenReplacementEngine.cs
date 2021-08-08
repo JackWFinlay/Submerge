@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Submerge.Abstractions.Exceptions;
 using Submerge.Abstractions.Interfaces;
 using Submerge.Abstractions.Models;
-using Submerge.Configuration;
-using Submerge.DataStructures;
 using Submerge.Extensions;
 
 namespace Submerge.ReplacementEngines
@@ -20,21 +17,16 @@ namespace Submerge.ReplacementEngines
             _config = config;
         }
 
-        public ReplaceResult Replace(ReadOnlyMemory<char> raw)
+        public string Replace(ReadOnlyMemory<char> raw)
         {
             if (raw.IsEmpty)
             {
-                return new ReplaceResult();
+                return string.Empty;
             }
             
             try
             {
                 var replaceResult = CreateEscapedTextList(raw);
-                
-                if (replaceResult.Memory.IsEmpty)
-                {
-                    return new ReplaceResult();
-                }
 
                 return replaceResult;
             }
@@ -44,7 +36,7 @@ namespace Submerge.ReplacementEngines
             }
         }
 
-        public IEnumerable<ReplaceResult> Replace(ReadOnlyMemory<char> raw,
+        public IEnumerable<string> Replace(ReadOnlyMemory<char> raw,
             IList<ISubstitutionMap> substitutionMaps)
         {
             if (!substitutionMaps.Any())
@@ -62,11 +54,14 @@ namespace Submerge.ReplacementEngines
             }
         }
 
-        public ReplaceResult Replace(TokenMatchSet matchSet, ISubstitutionMap substitutionMap)
+        public string Replace(TokenMatchSet matchSet, ISubstitutionMap substitutionMap)
         {
-            var result = ReplaceWithMatchIndexList(matchSet.Input, matchSet.TokenMatches, substitutionMap);
+            return ReplaceWithMatchIndexList(matchSet.Input, matchSet.TokenMatches, substitutionMap);
+        }
 
-            return result;
+        public string Replace(TokenMatchSet matchSet, TokenReplacementSet tokenReplacementSet)
+        {
+            return ReplaceWithFixedFormMatches(matchSet, tokenReplacementSet);
         }
 
         public TokenMatchSet GetTokenMatchSet(ReadOnlyMemory<char> input)
@@ -82,10 +77,9 @@ namespace Submerge.ReplacementEngines
             return result;
         }
 
-        private ReplaceResult CreateEscapedTextList(ReadOnlyMemory<char> raw)
+        private string CreateEscapedTextList(ReadOnlyMemory<char> raw)
         {
-            var result = new ValueList<ReadOnlyMemory<char>>();
-            var length = 0;
+            var result = new StringValueList();
             var prevIndex = 0;
 
             while (prevIndex < raw.Length)
@@ -108,11 +102,10 @@ namespace Submerge.ReplacementEngines
                 // Add chars preceding token.
                 if (indexOfTokenStart > 0)
                 {
-                    var memorySlice = raw.Slice(prevIndex, indexOfTokenStart);
+                    var memorySlice = raw.Span.Slice(prevIndex, indexOfTokenStart);
                     if (!memorySlice.IsEmpty)
                     {
                         result.Add(memorySlice);
-                        length += memorySlice.Length;
                     }
                 }
 
@@ -121,7 +114,7 @@ namespace Submerge.ReplacementEngines
                 if (startOfTokenEndIndex < 0)
                 {
                     // Malformed token. Return empty token.
-                    return new ReplaceResult();
+                    return string.Empty;
                 }
 
                 // We can just grab the slice of length startOfTokenEndIndex because of zero-based indexing.
@@ -132,17 +125,15 @@ namespace Submerge.ReplacementEngines
                 {
                     if (!substitution.IsEmpty)
                     {
-                        result.Add(substitution);
-                        length += substitution.Length;
+                        result.Add(substitution.Span);
                     }
                 }
                 else
                 {
                     // This is a substitution token that isn't registered. Don't replace it.
-                    result.Add(_config.TokenStart);
-                    result.Add(token);
-                    result.Add(_config.TokenEnd);
-                    length += (_config.TokenStart.Length + token.Length + _config.TokenEnd.Length);
+                    result.Add(_config.TokenStart.Span);
+                    result.Add(token.Span);
+                    result.Add(_config.TokenEnd.Span);
                 }
 
                 // Skip past what we know to be the token.
@@ -157,21 +148,16 @@ namespace Submerge.ReplacementEngines
                 }
             }
             
-            // Add on end of raw.
-            if (prevIndex < raw.Length)
+            if (prevIndex >= raw.Length)
             {
-                var endSlice = raw.Slice(prevIndex);
-                result.Add(endSlice);
-                length += endSlice.Length;
+                return result.ToString();
             }
 
-            var replaceResult = new ReplaceResult()
-            {
-                Memory = result.AsMemory(),
-                Length = length
-            };
-            
-            return replaceResult;
+            // Add on end of raw.
+            var endSlice = raw.Span.Slice(prevIndex);
+            result.Add(endSlice);
+
+            return result.ToString();
         }
 
         private ReadOnlyMemory<TokenMatch> GetMatches(ReadOnlyMemory<char> memory)
@@ -190,7 +176,11 @@ namespace Submerge.ReplacementEngines
 
                 // Take a slice without the token start.
                 var slice = memory.Slice((index + _config.TokenStart.Length));
-                var token = GetToken(slice, _config.TokenEnd);
+                var startOfTokenEndIndex = slice.IndexOfTokenStart(_config.TokenEnd);
+
+                // We can just grab the slice of length startOfTokenEndIndex because of zero-based indexing.
+                // e.g. where slice = 'abc|*...' with token end '|*' then index of token end is 3, so we take the first 3 chars.
+                var token = slice.Slice(0, startOfTokenEndIndex);
 
                 var tokenMatch = new TokenMatch
                 {
@@ -216,29 +206,11 @@ namespace Submerge.ReplacementEngines
             return valueList.AsMemory();
         }
 
-        private static ReadOnlyMemory<char> GetToken(ReadOnlyMemory<char> slice, ReadOnlyMemory<char> configTokenEnd)
-        {
-            var startOfTokenEndIndex = slice.IndexOfTokenStart(configTokenEnd);
-
-            if (startOfTokenEndIndex < 0)
-            {
-                // Malformed token. Return empty token.
-                return Array.Empty<char>();
-            }
-
-            // We can just grab the slice of length startOfTokenEndIndex because of zero-based indexing.
-            // e.g. where slice = 'abc|*...' with token end '|*' then index of token end is 3, so we take the first 3 chars.
-            var token = slice.Slice(0, startOfTokenEndIndex);
-
-            return token;
-        }
-        
-        private ReplaceResult ReplaceWithMatchIndexList(ReadOnlyMemory<char> raw,
+        private string ReplaceWithMatchIndexList(ReadOnlyMemory<char> raw,
             ReadOnlyMemory<TokenMatch> matches,
             ISubstitutionMap substitutionMap)
         {
-            var result = new ValueList<ReadOnlyMemory<char>>();
-            var length = 0;
+            var result = new StringValueList();
             var prevIndex = 0;
 
             foreach (var match in matches.Span)
@@ -250,11 +222,10 @@ namespace Submerge.ReplacementEngines
 
                 if (match.Index > 0)
                 {
-                    var memorySlice = raw.Slice(prevIndex, match.Index);
+                    var memorySlice = raw.Span.Slice(prevIndex, match.Index);
                     if (!memorySlice.IsEmpty)
                     {
                         result.Add(memorySlice);
-                        length += memorySlice.Length;
                     }
                 }
                 
@@ -267,17 +238,15 @@ namespace Submerge.ReplacementEngines
                 {
                     if (!substitution.IsEmpty)
                     {
-                        result.Add(substitution);
-                        length += substitution.Length;
+                        result.Add(substitution.Span);
                     }
                 }
                 else
                 {
                     // This is a substitution token that isn't registered. Don't replace it.
-                    result.Add(_config.TokenStart);
-                    result.Add(match.Token);
-                    result.Add(_config.TokenEnd);
-                    length += (_config.TokenStart.Length + match.Token.Length + _config.TokenEnd.Length);
+                    result.Add(_config.TokenStart.Span);
+                    result.Add(match.Token.Span);
+                    result.Add(_config.TokenEnd.Span);
                 }
 
                 var tokenLength = _config.TokenStart.Length + match.Token.Length + _config.TokenEnd.Length;
@@ -292,13 +261,65 @@ namespace Submerge.ReplacementEngines
 
             }
 
-            var replaceResult = new ReplaceResult
-            {
-                Memory = result.AsMemory(),
-                Length = length
-            };
+            return result.ToString();
+        }
+
+        private string ReplaceWithFixedFormMatches(TokenMatchSet matchSet, TokenReplacementSet replacement)
+        {
+            var raw = matchSet.Input;
+            var matches = matchSet.TokenMatches.Span;
+            var result = new StringValueList();
+            var prevIndex = 0;
             
-            return replaceResult;
+            for (var i = 0; i < matches.Length; i++)
+            {
+                var match = matches[i];
+                
+                if (prevIndex >= raw.Length || match.Index >= raw.Length)
+                {
+                    break;
+                }
+
+                if (match.Index > 0)
+                {
+                    var memorySlice = raw.Span.Slice(prevIndex, match.Index);
+                    if (!memorySlice.IsEmpty)
+                    {
+                        result.Add(memorySlice);
+                    }
+                }
+                
+                if (prevIndex + match.Index >= raw.Length)
+                {
+                    break;
+                }
+                
+                if (!replacement.IsEmpty(i))
+                {
+                    result.Add(replacement.GetSubstitution(i));
+                }
+                else
+                {
+                    // This is a substitution token that isn't registered. Don't replace it.
+                    result.Add(_config.TokenStart.Span);
+                    result.Add(match.Token.Span);
+                    result.Add(_config.TokenEnd.Span);
+                }
+
+                var tokenLength = _config.TokenStart.Length + match.Token.Length + _config.TokenEnd.Length;
+                if (prevIndex == 0)
+                {
+                    prevIndex = (match.Index + tokenLength);
+                }
+                else
+                {
+                    prevIndex += (match.Index + tokenLength);
+                }
+
+            }
+
+            return result.ToString();
+
         }
     }
 }

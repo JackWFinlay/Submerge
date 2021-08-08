@@ -43,7 +43,7 @@ namespace Submerge.Benchmarks.Benchmarks
         }
 
         [Benchmark]
-        public void EscapeRouteTokenReplacementEngine()
+        public void SubmergeMapFromConfig()
         {
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
                 .SetTokenEnd("}")
@@ -58,9 +58,31 @@ namespace Submerge.Benchmarks.Benchmarks
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
             submergeTokenReplacer.Replace(_testString);
         }
+        
+        [Benchmark]
+        public void SubmergeMapFromSubMap()
+        {
+            var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
+                .SetTokenEnd("}")
+                .Build();
+                
+            var subMap = new SubstitutionMap()
+                .UpdateOrAddMapping("name", _name)
+                .UpdateOrAddMapping("age", _age.ToString())
+                .UpdateOrAddMapping("rank", _rank.ToString())
+                .UpdateOrAddMapping("location", _location)
+                .UpdateOrAddMapping("state", _state)
+                .UpdateOrAddMapping("country", _country);
+
+            var submergeTokenReplacer = new SubmergeTokenReplacer(config);
+
+            var pattern = submergeTokenReplacer.GetMatches(_testString);
+            
+            submergeTokenReplacer.Replace(pattern, subMap);
+        }
 
         [Benchmark]
-        public void NativeStringReplace()
+        public void StringReplace()
         {
             var result = _testString.Replace("{name}", _name)
                 .Replace("{age}", _age.ToString())
@@ -68,7 +90,21 @@ namespace Submerge.Benchmarks.Benchmarks
                 .Replace("{location}", _location)
                 .Replace("{state}", _state)
                 .Replace("{country}", _country);
-
+        }
+        
+        [Benchmark]
+        public void StringInterpolation()
+        {
+            var result =
+                $"Name:{_name} Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luctus viverra ante, ac tempus diam efficitur feugiat. Age:{_age.ToString()} Praesent ipsum est, convallis at vehicula venenatis, convallis vitae nulla. Morbi tempus sed sapien nec sodales. Rank:{_rank.ToString()} Donec tellus nunc, fringilla eu dolor sit amet, eleifend efficitur sem. Vestibulum non diam tortor. Location:{_location} Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam quis mattis mauris. Morbi ac ultrices dolor State:{_state} Duis id consectetur lacus. Fusce ac neque at odio interdum commodo. Quisque ac magna metus. Maecenas sed lacinia odio Country:{_country} Aenean at odio volutpat, molestie felis id, vestibulum tellus. Vivamus pellentesque ut urna iaculis vehicula.";
+        }
+        
+        [Benchmark]
+        public void StringFormat()
+        {
+            var result = 
+                string.Format("Name:{0} Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean luctus viverra ante, ac tempus diam efficitur feugiat. Age:{1} Praesent ipsum est, convallis at vehicula venenatis, convallis vitae nulla. Morbi tempus sed sapien nec sodales. Rank:{2} Donec tellus nunc, fringilla eu dolor sit amet, eleifend efficitur sem. Vestibulum non diam tortor. Location:{3} Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam quis mattis mauris. Morbi ac ultrices dolor State:{4} Duis id consectetur lacus. Fusce ac neque at odio interdum commodo. Quisque ac magna metus. Maecenas sed lacinia odio Country:{5} Aenean at odio volutpat, molestie felis id, vestibulum tellus. Vivamus pellentesque ut urna iaculis vehicula.",
+                              _name, _age.ToString(), _rank.ToString(), _location, _state, _country);
         }
     }
 }

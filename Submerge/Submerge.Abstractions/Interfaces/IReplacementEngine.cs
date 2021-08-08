@@ -8,11 +8,13 @@ namespace Submerge.Abstractions.Interfaces
 {
     public interface IReplacementEngine
     {
-        ReplaceResult Replace(ReadOnlyMemory<char> raw);
+        string Replace(ReadOnlyMemory<char> raw);
 
-        IEnumerable<ReplaceResult> Replace(ReadOnlyMemory<char> raw, IList<ISubstitutionMap> substitutionMaps);
+        IEnumerable<string> Replace(ReadOnlyMemory<char> raw, IList<ISubstitutionMap> substitutionMaps);
 
-        ReplaceResult Replace(TokenMatchSet matchSet, ISubstitutionMap substitutionMap);
+        string Replace(TokenMatchSet matchSet, ISubstitutionMap substitutionMap);
+
+        string Replace(TokenMatchSet matchSet, TokenReplacementSet tokenReplacementSet);
 
         TokenMatchSet GetTokenMatchSet(ReadOnlyMemory<char> input);
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Submerge.Abstractions.Interfaces;
+using Submerge.Abstractions.Models;
 using Submerge.Configuration;
 using Xunit;
 
@@ -520,6 +521,62 @@ namespace Submerge.Test
                     .UpdateOrAddMapping("country", testClasses[i].Country);
                 
                 result[i] = submergeTokenReplacer.Replace(matches, subMap);
+            }
+
+            for (var i = 0; i < result.Length; i++)
+            {
+                result[i].Should()
+                    .Be(
+                        $"Name:{name} Age:{age.ToString()} Rank:{testClasses[i].Rank.ToString()} Location:{location} State:{state} Country:{country}");
+            }
+        }
+        
+        [Fact]
+        public void TestTokenReplacementEngine_ReplaceGetMatchesTokenReplacementSet_ReturnsProperlySubstitutedTextList()
+        {
+            var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
+                .SetTokenEnd("}")
+                .Build();
+            
+            var submergeTokenReplacer = new SubmergeTokenReplacer(config);
+            const string testString = Constants.ExampleMergeTemplate;
+            var matches = submergeTokenReplacer.GetMatches(testString);
+            
+            const int iterations = 2;
+            var testClasses = new TestClass[iterations];
+            
+            const string name = "John";
+            const string location = "Melbourne";
+            const string state = "Victoria";
+            const string country = "Australia";
+            const int age = 99;
+            
+            for (var i = 0; i < iterations; i++)
+            {
+                testClasses[i] = new TestClass()
+                {
+                    Name = name,
+                    Location = location,
+                    State = state,
+                    Country = country,
+                    Age = age,
+                    Rank = i
+                };
+            }
+            
+            var result = new string[iterations];
+            
+            for (var i = 0; i < iterations; i++)
+            {
+                var tokenReplacementSet = new TokenReplacementSet()
+                    .AddReplacement(testClasses[i].Name)
+                    .AddReplacement(testClasses[i].Age.ToString())
+                    .AddReplacement(testClasses[i].Rank.ToString())
+                    .AddReplacement(testClasses[i].Location)
+                    .AddReplacement(testClasses[i].State)
+                    .AddReplacement(testClasses[i].Country);
+                
+                result[i] = submergeTokenReplacer.Replace(matches, tokenReplacementSet);
             }
 
             for (var i = 0; i < result.Length; i++)
