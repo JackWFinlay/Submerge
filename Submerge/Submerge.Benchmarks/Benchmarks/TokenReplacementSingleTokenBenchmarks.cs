@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using StringTokenFormatter;
+using Submerge.Abstractions.Models;
 using Submerge.Configuration;
 
 namespace Submerge.Benchmarks.Benchmarks
@@ -29,6 +30,20 @@ namespace Submerge.Benchmarks.Benchmarks
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
             submergeTokenReplacer.Replace(_testString);
+        }
+        
+        [Benchmark]
+        public void SubmergeReplaceFixedFormat()
+        {
+            var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
+                .SetTokenEnd("}")
+                .Build();
+
+            var submergeTokenReplacer = new SubmergeTokenReplacer(config);
+            var matchSet = submergeTokenReplacer.GetFixedMatches(_testString);
+            var tokenReplacementSet = new TokenReplacementSet().AddReplacement(_name);
+                
+            submergeTokenReplacer.Replace(matchSet, tokenReplacementSet);
         }
         
         [Benchmark]

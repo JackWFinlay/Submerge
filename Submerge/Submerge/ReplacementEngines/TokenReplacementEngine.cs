@@ -4,6 +4,7 @@ using System.Linq;
 using Submerge.Abstractions.Exceptions;
 using Submerge.Abstractions.Interfaces;
 using Submerge.Abstractions.Models;
+using Submerge.DataStructures;
 using Submerge.Extensions;
 
 namespace Submerge.ReplacementEngines
@@ -59,7 +60,7 @@ namespace Submerge.ReplacementEngines
             return ReplaceWithMatchIndexList(matchSet.Input, matchSet.TokenMatches, substitutionMap);
         }
 
-        public string Replace(TokenMatchSet matchSet, TokenReplacementSet tokenReplacementSet)
+        public string Replace(FixedTokenMatchSet matchSet, TokenReplacementSet tokenReplacementSet)
         {
             return ReplaceWithFixedFormMatches(matchSet, tokenReplacementSet);
         }
@@ -76,10 +77,23 @@ namespace Submerge.ReplacementEngines
 
             return result;
         }
+        
+        public FixedTokenMatchSet GetFixedTokenMatchSet(ReadOnlyMemory<char> input)
+        {
+            var matches = GetFixedMatches(input);
+
+            var result = new FixedTokenMatchSet()
+            {
+                Input = input,
+                TokenMatches = matches
+            };
+
+            return result;
+        }
 
         private string CreateEscapedTextList(ReadOnlyMemory<char> raw)
         {
-            var result = new StringValueList();
+            var result = new StringValueList(raw.Length);
             var prevIndex = 0;
 
             while (prevIndex < raw.Length)
@@ -160,23 +174,28 @@ namespace Submerge.ReplacementEngines
             return result.ToString();
         }
 
-        private ReadOnlyMemory<TokenMatch> GetMatches(ReadOnlyMemory<char> memory)
+        private ValueList<TokenMatch> GetMatches(ReadOnlyMemory<char> memory)
         {
+            var tokenStart = _config.TokenStart;
+            var tokenStartLength = tokenStart.Length;
+            var tokenEnd = _config.TokenEnd;
+            var tokenEndLength = tokenEnd.Length;
             var valueList = new ValueList<TokenMatch>();
             
             while (memory.Length > 0)
             {
-                var index = memory.IndexOfTokenStart(_config.TokenStart);
+                var memoryLength = memory.Length;
+                var index = memory.IndexOfTokenStart(tokenStart);
                 
                 if (index == -1)
                 {
-                    valueList.Add(new TokenMatch { Index = memory.Length});
+                    valueList.Add(new TokenMatch { Index = memoryLength});
                     break;
                 }
 
                 // Take a slice without the token start.
-                var slice = memory.Slice((index + _config.TokenStart.Length));
-                var startOfTokenEndIndex = slice.IndexOfTokenStart(_config.TokenEnd);
+                var slice = memory.Slice((index + tokenStartLength));
+                var startOfTokenEndIndex = slice.IndexOfTokenStart(tokenEnd);
 
                 // We can just grab the slice of length startOfTokenEndIndex because of zero-based indexing.
                 // e.g. where slice = 'abc|*...' with token end '|*' then index of token end is 3, so we take the first 3 chars.
@@ -191,45 +210,100 @@ namespace Submerge.ReplacementEngines
                 valueList.Add(tokenMatch);
 
                 // Skip past the entire token.
-                var newIndex = index + _config.TokenStart.Length + token.Length + _config.TokenEnd.Length;
+                var newIndex = index + tokenStartLength + token.Length + tokenEndLength;
 
                 // Token is at end of string.
-                if (newIndex >= memory.Length)
+                if (newIndex >= memoryLength)
                 {
-                    valueList.Add(new TokenMatch { Index = memory.Length});
+                    valueList.Add(new TokenMatch { Index = memoryLength});
                     break;
                 }
 
                 memory = memory.Slice(newIndex);
             }
 
-            return valueList.AsMemory();
+            return valueList;
+        }
+        
+        private ValueList<FixedTokenMatch> GetFixedMatches(ReadOnlyMemory<char> memory)
+        {
+            var tokenStart = _config.TokenStart;
+            var tokenStartLength = tokenStart.Length;
+            var tokenEnd = _config.TokenEnd;
+            var tokenEndLength = tokenEnd.Length;
+            var valueList = new ValueList<FixedTokenMatch>();
+            
+            while (memory.Length > 0)
+            {
+                var memoryLength = memory.Length;
+                var index = memory.IndexOfTokenStart(_config.TokenStart);
+
+                if (index == -1)
+                {
+                    valueList.Add(new FixedTokenMatch { Index = memoryLength});
+                    break;
+                }
+
+                // Take a slice without the token start.
+                var slice = memory.Slice((index + tokenStartLength));
+                var startOfTokenEndIndex = slice.IndexOfTokenStart(tokenEnd);
+
+                // We can just grab the slice of length startOfTokenEndIndex because of zero-based indexing.
+                // e.g. where slice = 'abc|*...' with token end '|*' then index of token end is 3, so we take the first 3 chars.
+                var token = slice.Slice(0, startOfTokenEndIndex);
+                var tokenLength = token.Length;
+
+                var tokenMatch = new FixedTokenMatch
+                {
+                    Index = index,
+                    TokenLength = tokenLength
+                };
+                
+                valueList.Add(tokenMatch);
+
+                // Skip past the entire token.
+                var newIndex = index + tokenStartLength + tokenLength + tokenEndLength;
+
+                // Token is at end of string.
+                if (newIndex >= memoryLength)
+                {
+                    valueList.Add(new FixedTokenMatch { Index = memoryLength, TokenLength = tokenLength});
+                    break;
+                }
+
+                memory = memory.Slice(newIndex);
+            }
+
+            return valueList;
         }
 
         private string ReplaceWithMatchIndexList(ReadOnlyMemory<char> raw,
-            ReadOnlyMemory<TokenMatch> matches,
+            ValueList<TokenMatch> matches,
             ISubstitutionMap substitutionMap)
         {
-            var result = new StringValueList();
+            var result = new StringValueList(raw.Length);
             var prevIndex = 0;
 
-            foreach (var match in matches.Span)
+            for (var i = 0; i < matches.Length; i++)
             {
-                if (prevIndex >= raw.Length || match.Index >= raw.Length)
+                var match = matches[i];
+                var matchIndex = match.Index;
+                
+                if (prevIndex >= raw.Length || matchIndex >= raw.Length)
                 {
                     break;
                 }
 
-                if (match.Index > 0)
+                if (matchIndex > 0)
                 {
-                    var memorySlice = raw.Span.Slice(prevIndex, match.Index);
+                    var memorySlice = raw.Span.Slice(prevIndex, matchIndex);
                     if (!memorySlice.IsEmpty)
                     {
                         result.Add(memorySlice);
                     }
                 }
                 
-                if (prevIndex + match.Index >= raw.Length)
+                if (prevIndex + matchIndex >= raw.Length)
                 {
                     break;
                 }
@@ -252,11 +326,11 @@ namespace Submerge.ReplacementEngines
                 var tokenLength = _config.TokenStart.Length + match.Token.Length + _config.TokenEnd.Length;
                 if (prevIndex == 0)
                 {
-                    prevIndex = (match.Index + tokenLength);
+                    prevIndex = (matchIndex + tokenLength);
                 }
                 else
                 {
-                    prevIndex += (match.Index + tokenLength);
+                    prevIndex += (matchIndex + tokenLength);
                 }
 
             }
@@ -264,62 +338,52 @@ namespace Submerge.ReplacementEngines
             return result.ToString();
         }
 
-        private string ReplaceWithFixedFormMatches(TokenMatchSet matchSet, TokenReplacementSet replacement)
+        private string ReplaceWithFixedFormMatches(FixedTokenMatchSet matchSet, TokenReplacementSet replacement)
         {
             var raw = matchSet.Input;
-            var matches = matchSet.TokenMatches.Span;
-            var result = new StringValueList();
+            var rawLength = raw.Length;
+            var matches = matchSet.TokenMatches;
+            var result = new StringValueList(raw.Length);
             var prevIndex = 0;
             
             for (var i = 0; i < matches.Length; i++)
             {
                 var match = matches[i];
+                var matchIndex = match.Index;
                 
-                if (prevIndex >= raw.Length || match.Index >= raw.Length)
+                if (prevIndex >= rawLength || matchIndex >= rawLength)
                 {
                     break;
                 }
 
-                if (match.Index > 0)
+                if (matchIndex > 0)
                 {
-                    var memorySlice = raw.Span.Slice(prevIndex, match.Index);
+                    var memorySlice = raw.Span.Slice(prevIndex, matchIndex);
                     if (!memorySlice.IsEmpty)
                     {
                         result.Add(memorySlice);
                     }
                 }
                 
-                if (prevIndex + match.Index >= raw.Length)
+                if (prevIndex + matchIndex >= rawLength)
                 {
                     break;
                 }
                 
-                if (!replacement.IsEmpty(i))
-                {
-                    result.Add(replacement.GetSubstitution(i));
-                }
-                else
-                {
-                    // This is a substitution token that isn't registered. Don't replace it.
-                    result.Add(_config.TokenStart.Span);
-                    result.Add(match.Token.Span);
-                    result.Add(_config.TokenEnd.Span);
-                }
+                result.Add(replacement.GetSubstitution(i));
 
-                var tokenLength = _config.TokenStart.Length + match.Token.Length + _config.TokenEnd.Length;
+                var tokenLength = _config.TokenStart.Length + match.TokenLength + _config.TokenEnd.Length;
                 if (prevIndex == 0)
                 {
-                    prevIndex = (match.Index + tokenLength);
+                    prevIndex = (matchIndex + tokenLength);
                 }
                 else
                 {
-                    prevIndex += (match.Index + tokenLength);
+                    prevIndex += (matchIndex + tokenLength);
                 }
-
             }
 
             return result.ToString();
-
         }
     }
 }

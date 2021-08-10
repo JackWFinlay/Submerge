@@ -1,16 +1,35 @@
 using System;
 using System.Buffers;
-using System.Linq;
 
 namespace Submerge.Abstractions.Models
 {
     /// <summary>
     /// Adapted from System.Collections.Generic.ValueListBuilder
     /// </summary>
-    public struct ValueList<T>
+    public class ValueList<T>
     {
         private Memory<T> _memory;
         private T[] _array;
+        private const int _minimumCapacity = 16;
+
+        public ValueList()
+        {
+            _array = ArrayPool<T>.Shared.Rent(_minimumCapacity);
+            _memory = _array;
+            Length = 0;
+        }
+
+        public ValueList(int initialCapacity)
+        {
+            if (initialCapacity < _minimumCapacity)
+            {
+                initialCapacity = _minimumCapacity;
+            }
+
+            _array = ArrayPool<T>.Shared.Rent(initialCapacity);
+            _memory = _array;
+            Length = 0;
+        }
 
         public int Length { get; private set; }
 
@@ -31,25 +50,18 @@ namespace Submerge.Abstractions.Models
 
         public ReadOnlyMemory<T> AsMemory()
         {
-            var mem = _memory;
+            var mem = _memory.Slice(0, Length);
             Dispose();
             return mem;
-        }
-
-        public override string ToString()
-        {
-            var s = _memory.Slice(0, Length).ToString();
-            Dispose();
-            return s;
         }
 
         private void Grow()
         {
             var length = Length;
             
-            if (IsEmpty)
+            if (_memory.Length < _minimumCapacity)
             {
-                length = 4;
+                length = _minimumCapacity;
             }
 
             var array = ArrayPool<T>.Shared.Rent((length * 2));
@@ -68,11 +80,9 @@ namespace Submerge.Abstractions.Models
 
         private void Dispose()
         {
-            var array = _array;
-            this = default;
-            if (array != null)
+            if (_array != null)
             {
-                ArrayPool<T>.Shared.Return(array);
+                ArrayPool<T>.Shared.Return(_array);
             }
         }
     }

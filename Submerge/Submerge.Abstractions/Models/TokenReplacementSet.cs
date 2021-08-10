@@ -2,22 +2,12 @@ using System;
 
 namespace Submerge.Abstractions.Models
 {
-    public struct TokenReplacementSet
+    public class TokenReplacementSet
     {
-        private ValueList<ReadOnlyMemory<char>> _valueList;
-
-        public bool IsEmpty(int index)
-        {
-            return _valueList[index].IsEmpty;
-        }
+        private readonly ValueList<ReadOnlyMemory<char>> _valueList = new ValueList<ReadOnlyMemory<char>>();
 
         public ReadOnlySpan<char> GetSubstitution(int index)
         {
-            if (index > _valueList.Length)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
             return _valueList[index].Span;
         }
 

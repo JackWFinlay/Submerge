@@ -1,11 +1,10 @@
-using System;
 using Submerge.Abstractions.Interfaces;
 
 namespace Submerge.Abstractions.Models
 {
-    public class TokenMatch : ITokenMatch
+    public readonly struct FixedTokenMatch : ITokenMatch
     {
-        public ReadOnlyMemory<char> Token { get; init; }
         public int Index { get; init; }
+        public int TokenLength { get; init; }
     }
 }

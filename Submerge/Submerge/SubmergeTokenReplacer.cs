@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Submerge.Abstractions.Interfaces;
 using Submerge.Abstractions.Models;
 using Submerge.ReplacementEngines;
@@ -24,6 +22,9 @@ namespace Submerge
                  Replace(input.AsMemory(), (IList<ISubstitutionMap>) substitutionMaps);
 
         public TokenMatchSet GetMatches(string input) => _replacementEngine.GetTokenMatchSet(input.AsMemory());
+        
+        public FixedTokenMatchSet GetFixedMatches(string input) => _replacementEngine.GetFixedTokenMatchSet(input.AsMemory());
+
 
         public string Replace(TokenMatchSet matches, ISubstitutionMap substitutionMap)
         {
@@ -32,7 +33,7 @@ namespace Submerge
             return replaceResult;
         }
 
-        public string Replace(TokenMatchSet matches, TokenReplacementSet tokenReplacementSet) =>
+        public string Replace(FixedTokenMatchSet matches, TokenReplacementSet tokenReplacementSet) =>
             _replacementEngine.Replace(matches, tokenReplacementSet);
 
         private IEnumerable<string> Replace(ReadOnlyMemory<char> input,
@@ -67,22 +68,9 @@ namespace Submerge
 
         private string Replace(ReadOnlyMemory<char> input)
         {
-            var replaceResult = _replacementEngine.Replace(input);
-            var cachedRawString = string.Empty;
+            var replaceResult = _replacementEngine.Replace(input); ;
 
-            if (string.IsNullOrEmpty(replaceResult))
-            {
-                if (string.IsNullOrWhiteSpace(cachedRawString))
-                {
-                    cachedRawString = input.ToString();
-                }
-
-                replaceResult = cachedRawString;
-            }
-
-            var escaped = replaceResult;
-
-            return escaped;
+            return replaceResult;
         }
     }
 }

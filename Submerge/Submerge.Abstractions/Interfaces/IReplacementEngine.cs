@@ -14,8 +14,11 @@ namespace Submerge.Abstractions.Interfaces
 
         string Replace(TokenMatchSet matchSet, ISubstitutionMap substitutionMap);
 
-        string Replace(TokenMatchSet matchSet, TokenReplacementSet tokenReplacementSet);
+        string Replace(FixedTokenMatchSet matchSet, TokenReplacementSet tokenReplacementSet);
 
         TokenMatchSet GetTokenMatchSet(ReadOnlyMemory<char> input);
+        
+        FixedTokenMatchSet GetFixedTokenMatchSet(ReadOnlyMemory<char> input);
+
     }
 }
