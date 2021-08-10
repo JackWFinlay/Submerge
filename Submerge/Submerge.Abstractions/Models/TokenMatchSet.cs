@@ -1,5 +1,4 @@
 using System;
-using Submerge.Abstractions.Interfaces;
 
 namespace Submerge.Abstractions.Models
 {

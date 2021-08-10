@@ -47,18 +47,25 @@ namespace Submerge.DataStructures
 
         private void Grow(int additionLength)
         {
-            var newArray = ArrayPool<char>.Shared.Rent(Math.Max((_length + additionLength), (_span.Length * 2)));
+            var requiredLength = _length;
+            if (_length + additionLength > requiredLength)
+            {
+                requiredLength = (_length + additionLength) * 2;
+            }
+        
+            var newSize = Math.Max(requiredLength, (_length * 2 ));
 
-            _span.Slice(0, _length).CopyTo(newArray);
+            var array = ArrayPool<char>.Shared.Rent(newSize);
+            //Buffer.BlockCopy(_array, 0, array, 0, _length);
+            _span.Slice(0, _length).CopyTo(array);
 
-            var arrayToReturn = _array;
-            _array = newArray;
-            _span = _array;
-
-            if (arrayToReturn != null)
+            if (_array != null)
             {
                 ArrayPool<char>.Shared.Return(_array);
             }
+            
+            _array = array;
+            _span = _array;
         }
 
         private void Dispose()

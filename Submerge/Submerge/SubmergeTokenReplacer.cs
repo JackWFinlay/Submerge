@@ -68,7 +68,7 @@ namespace Submerge
 
         private string Replace(ReadOnlyMemory<char> input)
         {
-            var replaceResult = _replacementEngine.Replace(input); ;
+            var replaceResult = _replacementEngine.Replace(input);
 
             return replaceResult;
         }
