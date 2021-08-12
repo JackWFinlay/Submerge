@@ -4,7 +4,7 @@ namespace Submerge.Abstractions.Models
 {
     public class TokenReplacementSet
     {
-        private readonly ValueList<ReadOnlyMemory<char>> _valueList = new ValueList<ReadOnlyMemory<char>>();
+        private readonly ValueList<ReadOnlyMemory<char>> _valueList = new();
 
         public ReadOnlySpan<char> GetSubstitution(int index)
         {
