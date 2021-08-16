@@ -1,21 +1,33 @@
 using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
+using Submerge.ReplacementEngines;
 
 namespace Submerge.DataStructures
 {
+    // Adapted from System.Collections.Generic.ValueListBuilder,
+    // and System.Runtime.CompilerServices.DefaultInterpolatedStringHandler
     /// <summary>
-    /// Adapted from System.Collections.Generic.ValueListBuilder,
-    /// and System.Runtime.CompilerServices.DefaultInterpolatedStringHandler
+    /// A fast and efficient store for the values that make up a new string created by the <see cref="TokenReplacementEngine"/>.
     /// </summary>
     public ref struct StringValueList
     {
+        // A span to give us some fast access to the memory underneath _array.
         private Span<char> _span;
+        // Backing array for the string.
         private char[] _array;
+        // Tracks the current length of the string withing the _span.
         private int _pos;
+        // We are assuming here that we want a reasonably sized result string,
+        // so reduce Grow operations by making the default large. TODO: Tune as necessary.
         private const int _minimumCapacity = 1024;
+        // A bit lower than the theoretical limit of 2^30ish as there's no clear information on what the *real* limit is.
         private const int _maxCapacity = 1_000_000_000;
 
+        /// <summary>
+        /// Initialise a <see cref="StringValueList"/> with the specified capacity.
+        /// </summary>
+        /// <param name="initialCapacity">The desired minimum capacity of the <see cref="StringValueList"/></param>
         public StringValueList(int initialCapacity)
         {
             var capacityToRent = GetInitialLength(initialCapacity);
@@ -81,7 +93,7 @@ namespace Submerge.DataStructures
         private void Dispose()
         {
             var array = _array;
-            this = default; // Reset this instance, we are done with it, any new adds will be to new StringValueList.
+            this = default; // Reset this instance, we are done with it, any new adds will be to a new StringValueList.
             if (array != null)
             {
                 ArrayPool<char>.Shared.Return(array);

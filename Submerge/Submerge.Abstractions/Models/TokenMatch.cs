@@ -3,7 +3,7 @@ using Submerge.Abstractions.Interfaces;
 
 namespace Submerge.Abstractions.Models
 {
-    public class TokenMatch : ITokenMatch
+    public readonly struct TokenMatch : ITokenMatch
     {
         public ReadOnlyMemory<char> Token { get; init; }
         public int Index { get; init; }
