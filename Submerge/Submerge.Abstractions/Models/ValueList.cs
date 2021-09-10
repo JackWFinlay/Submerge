@@ -7,13 +7,13 @@ namespace Submerge.Abstractions.Models
     /// <summary>
     /// Adapted from System.Collections.Generic.ValueListBuilder
     /// </summary>
-    public class ValueList<T>
+    public struct ValueList<T> where T : struct
     {
         public int Length { get; private set; }
         
         private Memory<T> _memory;
         private T[] _array;
-        private const int _minimumCapacity = 16;
+        private const int _minimumCapacity = 8;
 
         public ref T this[int index] => ref _memory.Span[index];
 
@@ -27,6 +27,14 @@ namespace Submerge.Abstractions.Models
 
             _memory.Span[Length] = item;
             Length++;
+        }
+
+        public void Dispose()
+        {
+            if (_array != null)
+            {
+                ArrayPool<T>.Shared.Return(_array);
+            }
         }
 
         private void Grow()

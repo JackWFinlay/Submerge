@@ -24,12 +24,13 @@ namespace Submerge.Configuration
             var properties = item.GetType()
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Select(prop =>
-                    new KeyValuePair<ReadOnlyMemory<char>, ReadOnlyMemory<char>>(prop.Name.ToLowerInvariant().AsMemory(),
-                        prop.GetValue(item).ToString().AsMemory()));
+                    new KeyValuePair<ReadOnlyMemory<char>, 
+                        ReadOnlyMemory<char>>(prop.Name.ToLowerInvariant().AsMemory(),
+                                              prop.GetValue(item).ToString().AsMemory()));
 
-            foreach (var prop in properties)
+            foreach (var (key, value) in properties)
             {
-                UpdateOrAddMapping(prop.Key, prop.Value);
+                UpdateOrAddMapping(key, value);
             }
         }
 

@@ -10,4 +10,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Submerge.Abstractions\Submerge.Abstractions.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="DataStructures" />
+    </ItemGroup>
 </Project>

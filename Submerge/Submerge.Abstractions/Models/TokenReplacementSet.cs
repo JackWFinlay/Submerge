@@ -2,9 +2,9 @@ using System;
 
 namespace Submerge.Abstractions.Models
 {
-    public class TokenReplacementSet
+    public struct TokenReplacementSet : IDisposable
     {
-        private readonly ValueList<ReadOnlyMemory<char>> _valueList = new();
+        private ValueList<ReadOnlyMemory<char>> _valueList;
 
         public ReadOnlySpan<char> GetSubstitution(int index)
         {
@@ -12,9 +12,17 @@ namespace Submerge.Abstractions.Models
         }
 
         public TokenReplacementSet AddReplacement(string replacement)
+            => AddReplacement(replacement.AsMemory());
+
+        public TokenReplacementSet AddReplacement(ReadOnlyMemory<char> replacement)
         {
-            _valueList.Add(replacement.AsMemory());
+            _valueList.Add(replacement);
             return this;
+        }
+
+        public void Dispose()
+        {
+            _valueList.Dispose();
         }
     }
 }

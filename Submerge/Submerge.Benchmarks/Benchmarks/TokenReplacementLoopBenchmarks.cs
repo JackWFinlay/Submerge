@@ -92,7 +92,7 @@ namespace Submerge.Benchmarks.Benchmarks
             _fixedTokenMatchSet = _submergeTokenReplacer.GetFixedMatches(_testString);
         }
 
-        [Benchmark(Baseline = true)]
+        [Benchmark]
         public void StringTokenFormatter()
         {
             for (var i = 0; i < _iterations; i++)
@@ -139,7 +139,7 @@ namespace Submerge.Benchmarks.Benchmarks
             }
         }
         
-        [Benchmark]
+        [Benchmark(Baseline = true)]
         public void StringFormat()
         {
             for (var i = 0; i < _iterations; i++)
@@ -253,6 +253,31 @@ namespace Submerge.Benchmarks.Benchmarks
         }
         
         [Benchmark]
+        public void SubmergeReplaceWithGetMatchesReplaceSubstitutions()
+        {
+            var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
+                .SetTokenEnd("}")
+                .Build();
+            
+            var submergeTokenReplacer = new SubmergeTokenReplacer(config);
+            var matches = submergeTokenReplacer.GetMatches(_testString);
+            var substitutionMap = new SubstitutionMap();
+            
+            for (var i = 0; i < _iterations; i++)
+            {
+                substitutionMap
+                    .UpdateOrAddMapping("name", _testClasses[i].Name)
+                    .UpdateOrAddMapping("age", _testClasses[i].Age)
+                    .UpdateOrAddMapping("rank", _testClasses[i].Rank)
+                    .UpdateOrAddMapping("location", _testClasses[i].Location)
+                    .UpdateOrAddMapping("state", _testClasses[i].State)
+                    .UpdateOrAddMapping("country", _testClasses[i].Country);
+        
+                submergeTokenReplacer.Replace(matches, substitutionMap);
+            }
+        }
+        
+        [Benchmark]
         public void SubmergeReplaceWithGetMatchesPrecalculatedSubMap()
         {
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
@@ -268,6 +293,7 @@ namespace Submerge.Benchmarks.Benchmarks
             }
         }
         
+        
         [Benchmark]
         public void SubmergeReplaceWithGetMatchesTokenReplacementSet()
         {
@@ -280,7 +306,7 @@ namespace Submerge.Benchmarks.Benchmarks
             
             for (var i = 0; i < _iterations; i++)
             {
-                var tokenReplacementSet = new TokenReplacementSet()
+                using var tokenReplacementSet = new TokenReplacementSet()
                     .AddReplacement(_testClasses[i].Name)
                     .AddReplacement(_testClasses[i].Age)
                     .AddReplacement(_testClasses[i].Rank)

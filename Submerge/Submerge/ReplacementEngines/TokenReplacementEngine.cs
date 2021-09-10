@@ -4,7 +4,6 @@ using System.Linq;
 using Submerge.Abstractions.Exceptions;
 using Submerge.Abstractions.Interfaces;
 using Submerge.Abstractions.Models;
-using Submerge.DataStructures;
 using Submerge.Extensions;
 
 namespace Submerge.ReplacementEngines

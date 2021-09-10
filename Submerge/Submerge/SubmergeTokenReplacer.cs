@@ -18,23 +18,20 @@ namespace Submerge
         public string Replace(string input) => Replace(input.AsMemory());
 
         public IEnumerable<string> Replace(string input,
-            IEnumerable<ISubstitutionMap> substitutionMaps) =>
-                 Replace(input.AsMemory(), (IList<ISubstitutionMap>) substitutionMaps);
+            IEnumerable<ISubstitutionMap> substitutionMaps) 
+            => Replace(input.AsMemory(), (IList<ISubstitutionMap>) substitutionMaps);
 
-        public TokenMatchSet GetMatches(string input) => _replacementEngine.GetTokenMatchSet(input.AsMemory());
+        public TokenMatchSet GetMatches(string input) 
+            => _replacementEngine.GetTokenMatchSet(input.AsMemory());
         
-        public FixedTokenMatchSet GetFixedMatches(string input) => _replacementEngine.GetFixedTokenMatchSet(input.AsMemory());
+        public FixedTokenMatchSet GetFixedMatches(string input) 
+            => _replacementEngine.GetFixedTokenMatchSet(input.AsMemory());
+        
+        public string Replace(TokenMatchSet matches, ISubstitutionMap substitutionMap) 
+            => _replacementEngine.Replace(matches, substitutionMap);
 
-
-        public string Replace(TokenMatchSet matches, ISubstitutionMap substitutionMap)
-        {
-            var replaceResult = _replacementEngine.Replace(matches, substitutionMap);
-
-            return replaceResult;
-        }
-
-        public string Replace(FixedTokenMatchSet matches, TokenReplacementSet tokenReplacementSet) =>
-            _replacementEngine.Replace(matches, tokenReplacementSet);
+        public string Replace(FixedTokenMatchSet matches, TokenReplacementSet tokenReplacementSet) 
+            => _replacementEngine.Replace(matches, tokenReplacementSet);
 
         private IEnumerable<string> Replace(ReadOnlyMemory<char> input,
             IList<ISubstitutionMap> substitutionMaps)
