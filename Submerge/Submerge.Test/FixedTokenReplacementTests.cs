@@ -14,7 +14,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
                 .SetTokenEnd("}")
-                .AddMapping("key", substitution)
                 .Build();
 
             const string expected = substitution;
@@ -40,7 +39,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
                 .SetTokenEnd("}")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -67,7 +65,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
                 .SetTokenEnd("}")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -94,7 +91,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{")
                 .SetTokenEnd("}")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -121,7 +117,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{{")
                 .SetTokenEnd("}}")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -148,7 +143,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{{")
                 .SetTokenEnd("}}")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -175,7 +169,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{{")
                 .SetTokenEnd("}}")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -202,7 +195,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("{{")
                 .SetTokenEnd("}}")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -229,7 +221,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("*|")
                 .SetTokenEnd("|*")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -256,7 +247,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("*|")
                 .SetTokenEnd("|*")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -283,7 +273,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("*|")
                 .SetTokenEnd("|*")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -310,7 +299,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("*|")
                 .SetTokenEnd("|*")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -337,7 +325,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("*|")
                 .SetTokenEnd("|*")
-                .AddMapping("key", substitution)
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
@@ -367,8 +354,6 @@ namespace Submerge.Test
             
             var config = new TokenReplacementConfigurationBuilder().SetTokenStart("*|")
                 .SetTokenEnd("|*")
-                .AddMapping("key", substitution)
-                .AddMapping("key2", "substitution2")
                 .Build();
 
             var submergeTokenReplacer = new SubmergeTokenReplacer(config);
