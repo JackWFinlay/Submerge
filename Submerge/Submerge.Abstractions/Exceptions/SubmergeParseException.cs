@@ -1,11 +1,10 @@
 using System;
 
-namespace Submerge.Abstractions.Exceptions
+namespace Submerge.Abstractions.Exceptions;
+
+public class SubmergeParseException : Exception
 {
-    public class SubmergeParseException : Exception
+    public SubmergeParseException(string message, Exception innerException) : base(message, innerException)
     {
-        public SubmergeParseException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
     }
 }

@@ -9,10 +9,10 @@ namespace Submerge.Abstractions.Models;
 /// <summary>
 /// A fast and efficient store for the values that make up a new string created by the TokenReplacementEngine.
 /// </summary>
-public ref struct StringValueList
+public ref struct MemoryValueList
 {
     // A span to give us some fast access to the memory underneath _array.
-    private Span<char> _span;
+    private Memory<char> _mem;
         
     // Backing array for the string.
     private char[] _array;
@@ -32,81 +32,45 @@ public ref struct StringValueList
     /// <summary>
     /// Initialise a <see cref="StringValueList"/> with the specified capacity.
     /// </summary>
-    public StringValueList(int initialCapacity)
+    public MemoryValueList(int initialCapacity)
     {
         var capacityToRent = GetInitialLength(initialCapacity);
         _array = ArrayPool<char>.Shared.Rent(capacityToRent);
-        _span = _array;
+        _mem = _array;
         _pos = 0;
     }
     
     /// <summary>
     /// Initialise a <see cref="StringValueList"/> with the specified capacity.
     /// </summary>
-    public StringValueList(int rawLength, int numberOfSubstitutions)
+    public MemoryValueList(int rawLength, int numberOfSubstitutions)
     {
         var initialCapacityEstimate = rawLength + (numberOfSubstitutions * _defaultHoleSize);
         var capacityToRent = GetInitialLength(initialCapacityEstimate);
         _array = ArrayPool<char>.Shared.Rent(capacityToRent);
-        _span = _array;
+        _mem = _array;
         _pos = 0;
     }
         
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Add(ReadOnlySpan<char> value)
+    public void Add(ReadOnlyMemory<char> value)
     {
-        // Where theres only a single character, don't engage a CopyTo, just write it.
-        if (value.Length == 1)
+        if (value.Length + _pos > _mem.Length)
         {
-            if (_pos < _span.Length)
-            {
-                _span[_pos] = value[0];
-                _pos++;
-            }
-            else
-            {
-                Grow(1);
-                _span[_pos] = value[0];
-                _pos++;
-            }
+            Grow(value.Length);
+        }
+
+        value.CopyTo(_mem.Slice(_pos, value.Length));
             
-            return;
-        }
-
-        if (value.Length + _pos > _span.Length)
-        {
-            GrowThenCopy(value);
-            return;
-        }
-
-        AddDirect(value);
-    }
-    
-    private void GrowThenCopy(ReadOnlySpan<char> value)
-    {
-        Grow(value.Length);
-        value.CopyTo(_span.Slice(_pos, value.Length));
-
         _pos += value.Length;
     }
-
-    private void AddDirect(ReadOnlySpan<char> value)
-    {
-        if (value.TryCopyTo(_span.Slice(_pos)))
-        {
-            _pos += value.Length;
-        }
-        else
-        {
-            GrowThenCopy(value);
-        }
-    }
-
+        
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override string ToString()
     {
-        var s = new string(_span.Slice(0, _pos));
+        var s = _mem.Slice(0, _pos);
         Dispose();
-        return s;
+        return s.ToString();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -131,14 +95,14 @@ public ref struct StringValueList
             
         var newArray = ArrayPool<char>.Shared.Rent(newSize);
 
-        _span.Slice(0, _pos).CopyTo(newArray);
+        _mem.Slice(0, _pos).CopyTo(newArray);
 
         if (_array != null)
         {
             ArrayPool<char>.Shared.Return(_array);
         }
             
-        _span = _array = newArray;
+        _mem = _array = newArray;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

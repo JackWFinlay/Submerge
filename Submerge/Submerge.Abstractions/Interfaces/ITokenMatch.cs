@@ -1,7 +1,6 @@
-namespace Submerge.Abstractions.Interfaces
+namespace Submerge.Abstractions.Interfaces;
+
+public interface ITokenMatch
 {
-    public interface ITokenMatch
-    {
-        int Index { get; init; }
-    }
+    int Index { get; init; }
 }

@@ -1,83 +1,82 @@
 using System;
 
-namespace Submerge.Configuration
+namespace Submerge.Configuration;
+
+public class TokenReplacementConfigurationBuilder : TokenReplacementConfiguration
 {
-    public class TokenReplacementConfigurationBuilder : TokenReplacementConfiguration
+    public TokenReplacementConfigurationBuilder AddMapping(string token, 
+        string substitution)
     {
-        public TokenReplacementConfigurationBuilder AddMapping(string token, 
-            string substitution)
+        if (SubstitutionMap.TryGetValue(token.AsMemory(), out var value))
         {
-            if (SubstitutionMap.TryGetValue(token.AsMemory(), out var value))
-            {
-                throw new ArgumentException(
-                    $"Token '{token}' is already mapped to substitution '{value}'");
-            }
+            throw new ArgumentException(
+                $"Token '{token}' is already mapped to substitution '{value}'");
+        }
             
-            SubstitutionMap.Add(token.AsMemory(), substitution.AsMemory());
+        SubstitutionMap.Add(token.AsMemory(), substitution.AsMemory());
 
-            return this;
+        return this;
+    }
+
+    public TokenReplacementConfigurationBuilder SetTokenStart(string tokenStart)
+    {
+        if (!TokenStart.IsEmpty)
+        {
+            throw new ArgumentException(
+                $"TokenStart is already set to '{TokenStart}'");
         }
 
-        public TokenReplacementConfigurationBuilder SetTokenStart(string tokenStart)
+        TokenStart = tokenStart.AsMemory();
+
+        return this;
+    }
+
+    public TokenReplacementConfigurationBuilder SetTokenEnd(string tokenEnd)
+    {
+        if (!TokenEnd.IsEmpty)
         {
-            if (!TokenStart.IsEmpty)
-            {
-                throw new ArgumentException(
-                    $"TokenStart is already set to '{TokenStart}'");
-            }
-
-            TokenStart = tokenStart.AsMemory();
-
-            return this;
+            throw new ArgumentException(
+                $"TokenEnd is already set to '{TokenEnd}'");
         }
-
-        public TokenReplacementConfigurationBuilder SetTokenEnd(string tokenEnd)
-        {
-            if (!TokenEnd.IsEmpty)
-            {
-                throw new ArgumentException(
-                    $"TokenEnd is already set to '{TokenEnd}'");
-            }
             
-            TokenEnd = tokenEnd.AsMemory();
+        TokenEnd = tokenEnd.AsMemory();
 
-            return this;
-        }
+        return this;
+    }
 
-        public TokenReplacementConfiguration Build()
+    public TokenReplacementConfiguration Build()
+    {
+        if (TokenStart.IsEmpty)
         {
-            if (TokenStart.IsEmpty)
-            {
-                throw new ArgumentException(
-                    $"No token start defined. Use {nameof(SetTokenStart)} to set token start characters.");
-            }
-            
-            if (TokenEnd.IsEmpty)
-            {
-                throw new ArgumentException(
-                    $"No token end defined. Use {nameof(SetTokenEnd)} to set token end characters.");
-            }
-
-            var config = new TokenReplacementConfiguration()
-            {
-                TokenStart = TokenStart,
-                TokenEnd = TokenEnd,
-                SubstitutionMap = SubstitutionMap
-            };
-
-            return config;
+            throw new ArgumentException(
+                $"No token start defined. Use {nameof(SetTokenStart)} to set token start characters.");
         }
+            
+        if (TokenEnd.IsEmpty)
+        {
+            throw new ArgumentException(
+                $"No token end defined. Use {nameof(SetTokenEnd)} to set token end characters.");
+        }
+
+        var config = new TokenReplacementConfiguration()
+        {
+            TokenStart = TokenStart,
+            TokenEnd = TokenEnd,
+            SubstitutionMap = SubstitutionMap
+        };
+
+        return config;
+    }
         
-        public new TokenReplacementConfigurationBuilder UpdateOrAddMapping(string token, string substitution)
-        {
-            UpdateOrAddMapping(token.AsMemory(), substitution.AsMemory());
-            return this;
-        }
+    public new TokenReplacementConfigurationBuilder UpdateOrAddMapping(string token, string substitution)
+    {
+        UpdateOrAddMapping(token.AsMemory(), substitution.AsMemory());
+        return this;
+    }
 
-        public new TokenReplacementConfigurationBuilder UpdateOrAddFromObject(object item)
-        {
-            base.UpdateOrAddFromObject(item);
-            return this;
-        }
+    public new TokenReplacementConfigurationBuilder UpdateOrAddFromObject(object item)
+    {
+        base.UpdateOrAddFromObject(item);
+        return this;
     }
 }

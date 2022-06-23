@@ -1,10 +1,9 @@
 using System;
 
-namespace Submerge.Abstractions.Interfaces
+namespace Submerge.Abstractions.Interfaces;
+
+public interface ISubstitutionMap
 {
-    public interface ISubstitutionMap
-    {
-        ISubstitutionMap UpdateOrAddMapping(string token, string substitution);
-        bool TryGetValue(ReadOnlyMemory<char> token, out ReadOnlyMemory<char> value);
-    }
+    ISubstitutionMap UpdateOrAddMapping(string token, string substitution);
+    bool TryGetValue(ReadOnlyMemory<char> token, out ReadOnlyMemory<char> value);
 }

@@ -1,28 +1,61 @@
 using System;
+using System.Runtime.CompilerServices;
 
-namespace Submerge.Abstractions.Models
+namespace Submerge.Abstractions.Models;
+
+public struct TokenReplacementSet
 {
-    public struct TokenReplacementSet : IDisposable
+    private ValueList<ReadOnlyMemory<char>> _valueList;
+
+    public ReadOnlyMemory<char> this[int index] => _valueList[index];
+    
+    public TokenReplacementSet()
     {
-        private ValueList<ReadOnlyMemory<char>> _valueList;
+        _valueList = new ValueList<ReadOnlyMemory<char>>();
+    }
 
-        public ReadOnlySpan<char> GetSubstitution(int index)
+    public TokenReplacementSet(string[] items)
+    {
+        _valueList = new ValueList<ReadOnlyMemory<char>>(items.Length);
+        AddReplacements(items);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<char> GetSubstitution(int index)
+    {
+        return _valueList[index].Span;
+    }
+    
+    public TokenReplacementSet AddReplacements(string[] items)
+    {
+        var memArray = new ReadOnlyMemory<char>[items.Length];
+        for (var i = 0; i < items.Length; i++)
         {
-            return _valueList[index].Span;
+            memArray[i] = items[i].AsMemory();
         }
 
-        public TokenReplacementSet AddReplacement(string replacement)
-            => AddReplacement(replacement.AsMemory());
+        return AddReplacements(memArray);
+    }
 
-        public TokenReplacementSet AddReplacement(ReadOnlyMemory<char> replacement)
-        {
-            _valueList.Add(replacement);
-            return this;
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public TokenReplacementSet AddReplacements(ReadOnlyMemory<char>[] items)
+    {
+        _valueList.Add(items);
+        return this;
+    }
 
-        public void Dispose()
-        {
-            _valueList.Dispose();
-        }
+    public TokenReplacementSet AddReplacement(string replacement)
+        => AddReplacement(replacement.AsMemory());
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public TokenReplacementSet AddReplacement(ReadOnlyMemory<char> replacement)
+    {
+        _valueList.Add(replacement);
+        return this;
+    }
+
+    public void Dispose()
+    {
+        _valueList.Dispose();
     }
 }
